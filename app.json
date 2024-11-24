@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "wo-ist-weihnachtsmarkt-in-leipzig",
+    "name": "Wo ist Weihnachtsmarkt in Leipzig",
     "slug": "wo-ist-weihnachtsmarkt-in-leipzig",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -31,6 +31,12 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Erlaube $(PRODUCT_NAME) Deine Geo-Position zu nutzen."
         }
       ]
     ],
