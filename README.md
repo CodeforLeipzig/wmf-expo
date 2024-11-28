@@ -1,12 +1,12 @@
 # wmf-expo
 'Wo ist Weihnachtsmarkt' mobile apps with [Expo](https://expo.dev)
 
-## How to Run
-# Welcome to your Expo app 👋
-
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## App stores
+- [Apple App Store](https://apps.apple.com/de/app/wtf-is-wm/id6738749984)
+- [Android Google Play Store](https://play.google.com/store/apps/details?id=com.sannsie.woistweihnachtsmarktinleipzig)
 
 ## Get started
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 1. download Expo Go App for [Android](https://play.google.com/store/apps/details?id=host.exp.exponent&referrer=www) or [iOS](https://itunes.apple.com/app/apple-store/id982107779)
 2. clone repository
 3. install dependencies `npm install`
