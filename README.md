@@ -25,7 +25,12 @@ In the output, you'll find options to open the app in a
 ## Install
 `npx expo install`
 
-## Update
+## Update general to latest
+`sudo npm install -g npm-check-updates`
+`ncu -u`
+`npm install`
+
+## Update EAS
 `sudo npm install -g eas-cli`
 `npx expo install expo-updates`
 `npx eas update:configure`
@@ -36,10 +41,13 @@ When initial run:
 * `npm install -g sharp-cli`
 * `npx expo-optimize`
 
+## Pre-check
+`npx expo-doctor`
+
 ## Build
 * `npx eas build --platform android`
 * `npx eas-cli@latest build --platform ios`
  
 ## Submit
-* `npx eas submit --platform android --profile internal`
-* `npx eas submit --platform ios --profile internal`
+* `npx eas submit --platform android`
+* `npx eas submit --platform ios`
