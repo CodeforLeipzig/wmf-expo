@@ -22,7 +22,7 @@ const WebViewComponent = WebView as unknown as React.ForwardRefExoticComponent<
 >;
 
 export const getGeoLocationJS = () => {
-  const geoLocCode = require('./assets/GeoLocation.js')
+  const geoLocCode = require('./GeoLocation.js')
   return `
     (function() {
       ${geoLocCode}
