@@ -3,7 +3,6 @@
     "name": "WTF is WM",
     "slug": "wo-ist-weihnachtsmarkt-in-leipzig",
     "version": "1.0.2",
-    "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",

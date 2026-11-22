@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
-import { WebView } from "react-native-webview";
+import { Platform, StatusBar, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView, WebViewMessageEvent, WebViewProps } from "react-native-webview";
 import React, { useRef } from 'react';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from 'expo-location';
@@ -10,8 +11,18 @@ const whiteList = [
   "https://leipziger-weihnachtsmaerkte.netlify.app",
 ];
 
+// The bundled typings of react-native-webview declare `WebView` as a class with
+// a default type argument of `undefined`, which makes its props resolve to
+// `never` under the React 19 types (every JSX prop errors with
+// "not assignable to never"). The runtime component is actually a forwardRef
+// component, so use an explicitly typed alias for the JSX usage. `WebView`
+// itself remains usable as the instance type (e.g. for `useRef<WebView>`).
+const WebViewComponent = WebView as unknown as React.ForwardRefExoticComponent<
+  WebViewProps & React.RefAttributes<WebView>
+>;
+
 export const getGeoLocationJS = () => {
-  const geoLocCode = require('./GeoLocation.js')
+  const geoLocCode = require('./assets/GeoLocation.js')
   return `
     (function() {
       ${geoLocCode}
@@ -19,103 +30,97 @@ export const getGeoLocationJS = () => {
   `;
 };
 
-type EventType =
-  | {
-      event: 'getCurrentPosition'
-      fun: (
-        success: (pos: Location.LocationObject) => void,
-        error: (error: any) => void
-      ) => Promise<void>
-      successCode: string
-      errorCode: string
-      input?: undefined
-    }
-  | {
-      event: 'watchPosition'
-      fun: (
-        success: (pos: Location.LocationObject) => void,
-        error: (error: any) => void
-      ) => Promise<void>
-      successCode: string
-      errorCode: string
-      input?: undefined
-    }
-  | {
-      event: 'clearWatch'
-      fun: (taskName: string) => Promise<void>
-      input: (param: { taskName: string }) => string
-      successCode?: undefined
-      errorCode?: undefined
-    }
-
-const eventTypes: EventType[] = [
-  {
-    event: 'getCurrentPosition',
-    fun: (success, error) =>
-      Location.getCurrentPositionAsync({})
-        .then(success)
-        .catch(error),
-    successCode: 'currentPosition',
-    errorCode: 'currentPositionError'
-  },
-  {
-    event: 'watchPosition',
-    fun: (success, error) =>
-      Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 1 },
-        success,
-        error
-      )
-        .then(() => {})
-        .catch(error),
-    successCode: 'watchPosition',
-    errorCode: 'watchPositionError'
-  },
-  {
-    event: 'clearWatch',
-    fun: (taskName) => Location.stopLocationUpdatesAsync(taskName),
-    input: (param: { taskName: string }) => param.taskName
-  }
-]
-
 const WebViewScreen = () => {
   const webviewRef = useRef<WebView>(null);
+  const locationSubscriptions = new Map<number, Location.LocationSubscription>();
+  let nextWatchId = 1;
   const insets = useSafeAreaInsets();
 
-  return (
-    <WebView
-      geolocationEnabled={ true }
-      injectedJavaScript={ getGeoLocationJS() }
-      javaScriptEnabled={ true }
-      onMessage={ event => {
-        try {
-          const data = JSON.parse(event.nativeEvent.data);
-          const postMessage = (msg: {}) => {
-            webviewRef.current?.postMessage(JSON.stringify(msg));
+  const handleMessage = async (event: WebViewMessageEvent) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+
+      switch (data.event) {
+        case 'getCurrentPosition': {
+          try {
+            const location = await Location.getCurrentPositionAsync({});
+
+            postMessage({
+              event: 'currentPosition',
+              data: location,
+            });
+          } catch (error) {
+            postMessage({
+              event: 'currentPositionError',
+              data: error,
+            });
           }
-          const eventType = eventTypes.find(eventType => data?.event && data.event == eventType.event);
-          if (eventType) {
-            if (eventType.successCode) {
-              eventType.fun(
-                input => postMessage({ event: eventType.successCode, data: input }),
-                error => postMessage({ event: eventType.errorCode, data: error })
-              );
-            } else if (eventType.input) {
-              eventType.fun(eventType.input(data));
-            }
-          }    
-        } catch (e) {
-          console.log(e);
+          break;
         }
-      }}
-      ref={webviewRef}
-      startInLoadingState={ true } 
-      style={[styles.webView, { marginTop: insets.top }]}
-      source={{ uri: "https://leipziger-weihnachtsmaerkte.netlify.app" }}
-      originWhitelist={whiteList}
-      allowsBackForwardNavigationGestures
-      sharedCookiesEnabled
-    />
+        case 'watchPosition': {
+          const watchId = nextWatchId++;
+          try {
+            const subscription = await Location.watchPositionAsync(
+              {},
+              location => {
+                postMessage({
+                  event: 'watchPosition',
+                  watchId,
+                  data: location,
+                });
+              },
+              error => {
+                postMessage({
+                  event: 'watchPositionError',
+                  watchId,
+                  data: error,
+                });
+              }
+            );
+            locationSubscriptions.set(watchId, subscription);
+            postMessage({
+              event: 'watchPositionStarted',
+              watchId,
+            });
+          } catch (error) {
+            postMessage({
+              event: 'watchPositionError',
+              watchId,
+              data: error,
+            });
+          }
+          break;
+        }
+        case 'clearWatch': {
+          const subscription = locationSubscriptions.get(data.watchId);
+          if (subscription) {
+            subscription.remove();
+            locationSubscriptions.delete(data.watchId);
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <WebViewComponent
+        ref={webviewRef}
+        geolocationEnabled={ true }
+        injectedJavaScript={ getGeoLocationJS() }
+        javaScriptEnabled={ true }
+        onMessage={handleMessage}
+        startInLoadingState={ true } 
+        style={[styles.webView, { marginTop: insets.top }]}
+        source={{ uri: "https://leipziger-weihnachtsmaerkte.netlify.app" }}
+        originWhitelist={whiteList}
+        allowsBackForwardNavigationGestures
+        sharedCookiesEnabled
+      />
+    </SafeAreaView>
   );
 };
 
