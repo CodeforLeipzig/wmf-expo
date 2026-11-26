@@ -47,7 +47,7 @@
     "@babel/core": "^7.29.13",
     "@types/react": "~19.3.0",
     "metro": "^0.84.6",
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.0"
   },
   "private": true
 }
