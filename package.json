@@ -46,7 +46,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.13",
     "@types/react": "~19.3.0",
-    "metro": "^0.84.6",
+    "metro": "^0.88.0",
     "typescript": "~6.0.3"
   },
   "private": true
